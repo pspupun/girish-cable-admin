@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Girish Cable - Payments</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">Girish Cable</div>
+      <nav>
+        <button class="nav-btn" onclick="location.href='dashboard.html'">← Back</button>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="section-header">
+        <h2 id="title">Payments</h2>
+        <div class="row">
+          <label>Year</label>
+          <input id="year" type="number" value="" style="width:120px"/>
+          <button onclick="loadPayments()">Load</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="paymentsTable">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Status</th>
+              <th>Amount (₹)</th>
+              <th>Mode</th>
+              <th>Note</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const customerId = params.get('customerId');
+const customerName = localStorage.getItem('gc_customer_name') || 'Customer';
+document.getElementById('title').innerText = `Payments - ${customerName}`;
+document.getElementById('year').value = new Date().getFullYear();
+
+const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+async function loadPayments(){
+  const year = document.getElementById('year').value;
+  const res = await fetch(`/api/customers/${customerId}/payments?year=${year}`);
+  const rows = await res.json();
+  const tbody = document.querySelector('#paymentsTable tbody'); 
+  tbody.innerHTML='';
+
+  rows.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${monthNames[p.month-1]}</td>
+      <td>
+        <select id="status_${p.id}">
+          <option value="paid" ${p.status==='paid'?'selected':''}>Paid</option>
+          <option value="unpaid" ${p.status==='unpaid'?'selected':''}>Unpaid</option>
+        </select>
+      </td>
+      <td><input type="number" value="${p.amount||0}" id="amt_${p.id}" style="width:100px"/></td>
+      <td>
+        <select id="mode_${p.id}">
+          <option value="cash" ${p.mode==='cash'?'selected':''}>Cash</option>
+          <option value="online" ${p.mode==='online'?'selected':''}>Online</option>
+        </select>
+      </td>
+      <td><input type="text" value="${p.note||''}" id="note_${p.id}" /></td>
+      <td>
+        <button onclick="updatePayment(${p.id})">Save</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function updatePayment(id){
+  const amount = parseInt(document.getElementById('amt_'+id).value||'0');
+  const status = document.getElementById('status_'+id).value;
+  const mode = document.getElementById('mode_'+id).value;
+  const note = document.getElementById('note_'+id).value;
+
+  const res = await fetch('/api/payments/'+id,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ status, amount, mode, note })
+  });
+  if(res.ok){
+    alert('Payment updated');
+    loadPayments();
+  } else {
+    alert(await res.text());
+  }
+}
+
+loadPayments();
+</script>
+</body>
+</html>

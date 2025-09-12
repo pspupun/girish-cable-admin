@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Girish Cable - Login</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg,#3498db,#2980b9); display:flex; justify-content:center; align-items:center; height:100vh; }
+  .login-card { background:#fff; width:100%; max-width:400px; padding:30px 40px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2); text-align:center; }
+  .login-card h2 { margin-bottom:20px; color:#333; }
+  .login-card input { width:100%; padding:12px 15px; margin:10px 0; border-radius:6px; border:1px solid #ccc; font-size:1em; transition:0.3s; }
+  .login-card input:focus { border-color:#3498db; outline:none; box-shadow:0 0 5px rgba(52,152,219,0.5); }
+  .login-card button { width:100%; padding:12px; margin-top:15px; border:none; border-radius:6px; background:#3498db; color:#fff; font-size:1em; cursor:pointer; transition:0.3s; }
+  .login-card button:hover { background:#2980b9; }
+  .info-text { margin-top:15px; font-size:0.9em; color:#666; }
+  .info-text span { font-weight:bold; color:#333; }
+  @media(max-width:480px){
+    .login-card { padding:25px 20px; }
+    .login-card h2 { font-size:1.5em; }
+  }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <h2>Girish Cable Login</h2>
+  <input type="text" id="phone" placeholder="Phone Number"/>
+  <input type="password" id="password" placeholder="Password"/>
+  <button onclick="login()">Login</button>
+  <div class="info-text">
+    Use <span>Phone</span> & <span>Password</span> to login.
+  </div>
+</div>
+
+<script>
+async function login(){
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if(!phone || !password){ alert('Enter phone & password'); return; }
+
+  try{
+    const res = await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({phone,password})
+    });
+    if(res.ok){
+      const user = await res.json();
+      localStorage.setItem('gc_user', JSON.stringify(user));
+      window.location.href = 'dashboard.html';
+    } else {
+      alert(await res.text());
+    }
+  } catch(err){
+    alert('Server error');
+  }
+}
+</script>
+</body>
+</html>
