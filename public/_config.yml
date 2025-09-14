@@ -1,4 +1,11 @@
+# Exclude unnecessary files/folders from Jekyll build
 exclude:
   - node_modules
+  - girish-cable/node_modules
+  - README.md
+  - .gitignore
+  - .github
+  - .git
   - package-lock.json
-  - yarn.lock
+  - package.json
+
