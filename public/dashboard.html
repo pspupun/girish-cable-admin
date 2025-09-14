@@ -123,66 +123,87 @@ async function loadSummary(){
 }
 
 // Customers
-async function loadCustomers(){
+async function loadCustomers() {
   const data = JSON.parse(localStorage.getItem('customers') || '[]');
   const tbody = document.querySelector('#customersTable tbody');
   tbody.innerHTML = '';
-  data.forEach(c=>{
-    const tr=document.createElement('tr');
+  data.forEach(c => {
+    const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${c.id}</td>
+      <td>${c.vc_no || ''}</td>
       <td>${c.name}</td>
       <td>${c.village}</td>
       <td>${c.phone}</td>
       <td>
-        <button onclick="editCustomer(${c.id},'${escapeHtml(c.name)}','${escapeHtml(c.village)}','${c.phone}')">Edit</button>
-        <button onclick="viewPayments(${c.id},'${escapeHtml(c.name)}')">Payments</button>
+        <button onclick="editCustomer(${c.id}, '${escapeHtml(c.vc_no || '')}', '${escapeHtml(c.name)}', '${escapeHtml(c.village)}', '${escapeHtml(c.phone)}')">Edit</button>
+        <button onclick="viewPayments(${c.id}, '${escapeHtml(c.vc_no || '')}', '${escapeHtml(c.name)}')">Payments</button>
         <button class="danger" onclick="deleteCustomer(${c.id})">Delete</button>
       </td>`;
     tbody.appendChild(tr);
   });
 }
-function openCustomerForm(){
+
+function openCustomerForm() {
   document.getElementById('modalTitle').innerText = 'Add Customer';
   document.getElementById('modalContent').innerHTML = `
     <label>ID</label><input id="c_id" type="number" placeholder="Leave empty for auto"/>
+    <label>VC No</label><input id="c_vcno" type="text" placeholder="Leave empty for auto"/>
     <label>Name</label><input id="c_name"/>
     <label>Village</label><input id="c_village"/>
     <label>Phone</label><input id="c_phone"/>
     <button onclick="createCustomer()">Save</button>`;
   openModal();
 }
-function createCustomer(){
+
+function createCustomer() {
   const idField = document.getElementById('c_id').value.trim();
+  const vcField = document.getElementById('c_vcno').value.trim();
   const id = idField !== '' ? parseInt(idField) : Date.now();
+  const vc_no = vcField !== '' ? vcField : 'VC-' + Date.now();
   const name = document.getElementById('c_name').value.trim();
   const village = document.getElementById('c_village').value.trim();
   const phone = document.getElementById('c_phone').value.trim();
-  if(!name || !village || !phone){ alert('All fields required'); return; }
+
+  if (!name || !village || !phone) {
+    alert('All fields except ID and VC No are required');
+    return;
+  }
+
   let customers = JSON.parse(localStorage.getItem('customers') || '[]');
-  customers.push({id,name,village,phone});
+  customers.push({ id, vc_no, name, village, phone });
   localStorage.setItem('customers', JSON.stringify(customers));
   closeModal();
   loadCustomers();
   loadSummary();
 }
-function editCustomer(id,name,village,phone){
+
+function editCustomer(id, vc_no, name, village, phone) {
   document.getElementById('modalTitle').innerText = 'Edit Customer';
   document.getElementById('modalContent').innerHTML = `
+    <label>VC No</label><input id="e_vcno" value="${vc_no}"/>
     <label>Name</label><input id="e_name" value="${name}"/>
     <label>Village</label><input id="e_village" value="${village}"/>
     <label>Phone</label><input id="e_phone" value="${phone}"/>
     <button onclick="updateCustomer(${id})">Update</button>`;
   openModal();
 }
-function updateCustomer(id){
+
+function updateCustomer(id) {
+  const vc_no = document.getElementById('e_vcno').value.trim();
   const name = document.getElementById('e_name').value.trim();
   const village = document.getElementById('e_village').value.trim();
   const phone = document.getElementById('e_phone').value.trim();
-  if(!name || !village || !phone){ alert('Fields cannot be empty'); return; }
+
+  if (!name || !village || !phone) {
+    alert('Fields cannot be empty');
+    return;
+  }
+
   let customers = JSON.parse(localStorage.getItem('customers') || '[]');
-  let customer = customers.find(c=>c.id===id);
-  if(customer){
+  let customer = customers.find(c => c.id === id);
+  if (customer) {
+    customer.vc_no = vc_no;
     customer.name = name;
     customer.village = village;
     customer.phone = phone;
@@ -191,37 +212,57 @@ function updateCustomer(id){
     loadCustomers();
   }
 }
-function deleteCustomer(id){
-  if(!confirm('Delete this customer?')) return;
+
+function deleteCustomer(id) {
+  if (!confirm('Delete this customer?')) return;
   let customers = JSON.parse(localStorage.getItem('customers') || '[]');
-  customers = customers.filter(c=>c.id !== id);
+  customers = customers.filter(c => c.id !== id);
   localStorage.setItem('customers', JSON.stringify(customers));
   loadCustomers();
   loadSummary();
 }
-function searchCustomer(){
+
+function searchCustomer() {
   const q = document.getElementById('searchBox').value.toLowerCase();
   let customers = JSON.parse(localStorage.getItem('customers') || '[]');
-  customers = customers.filter(c=>c.name.toLowerCase().includes(q) || c.village.toLowerCase().includes(q) || c.phone.includes(q));
+  customers = customers.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.village.toLowerCase().includes(q) ||
+    c.phone.includes(q) ||
+    (c.vc_no && c.vc_no.toLowerCase().includes(q))
+  );
   populateCustomersTable(customers);
 }
-function populateCustomersTable(data){
+
+function populateCustomersTable(data) {
   const tbody = document.querySelector('#customersTable tbody');
   tbody.innerHTML = '';
-  data.forEach(c=>{
+  data.forEach(c => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${c.id}</td>
+      <td>${c.vc_no || ''}</td>
       <td>${c.name}</td>
       <td>${c.village}</td>
       <td>${c.phone}</td>
       <td>
-        <button onclick="editCustomer(${c.id},'${escapeHtml(c.name)}','${escapeHtml(c.village)}','${c.phone}')">Edit</button>
-        <button onclick="viewPayments(${c.id},'${escapeHtml(c.name)}')">Payments</button>
+        <button onclick="editCustomer(${c.id}, '${escapeHtml(c.vc_no || '')}', '${escapeHtml(c.name)}', '${escapeHtml(c.village)}', '${escapeHtml(c.phone)}')">Edit</button>
+        <button onclick="viewPayments(${c.id}, '${escapeHtml(c.vc_no || '')}', '${escapeHtml(c.name)}')">Payments</button>
         <button class="danger" onclick="deleteCustomer(${c.id})">Delete</button>
       </td>`;
     tbody.appendChild(tr);
   });
+}
+
+// Utility function to escape HTML
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 // Plans
